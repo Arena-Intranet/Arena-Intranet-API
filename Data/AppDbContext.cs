@@ -1,5 +1,4 @@
-﻿
-using APIArenaAuto.Models;
+﻿using APIArenaAuto.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace APIArenaAuto.Data
@@ -11,12 +10,20 @@ namespace APIArenaAuto.Data
         {
         }
 
+        public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Treinamento> Treinamentos { get; set; }
+        public DbSet<Comunicado> Comunicados { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Usuario>()
+                .ToTable("usuarios");
+
             modelBuilder.Entity<Treinamento>()
-                .ToTable("Treinamentos"); // nome exato da tabela
+                .ToTable("Treinamentos");
+
+            modelBuilder.Entity<Comunicado>()
+                .ToTable("Comunicados");
         }
     }
 }

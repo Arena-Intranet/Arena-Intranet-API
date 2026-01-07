@@ -3,7 +3,7 @@
     "APIArenaAuto": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "applicationUrl": "http://0.0.0.0:5146",
+      "applicationUrl": "https://0.0.0.0:5146",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
