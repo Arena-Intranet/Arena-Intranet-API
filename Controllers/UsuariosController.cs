@@ -4,6 +4,11 @@ using APIArenaAuto.Models;
 using APIArenaAuto.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 
 namespace APIArenaAuto.Controllers
 {
@@ -12,49 +17,52 @@ namespace APIArenaAuto.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly string _diretorioFotos = @"C:\Users\Administrator\Downloads\FotosUsuarios";
 
         public UsuariosController(AppDbContext context)
         {
             _context = context;
+            if (!Directory.Exists(_diretorioFotos))
+            {
+                Directory.CreateDirectory(_diretorioFotos);
+            }
         }
 
-        // ============================
-        // GET: api/usuarios
-        // ============================
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuarios()
+        private async Task<string?> ProcessarFoto(string? base64Completo)
         {
-            return Ok(await _context.Usuarios.ToListAsync());
+            if (string.IsNullOrEmpty(base64Completo) || !base64Completo.Contains("base64"))
+                return null;
+
+            try
+            {
+                string base64Data = base64Completo.Contains(",") ? base64Completo.Split(',')[1] : base64Completo;
+                byte[] imageBytes = Convert.FromBase64String(base64Data.Trim());
+                string nomeArquivo = $"{Guid.NewGuid()}.png";
+                string caminhoCompleto = Path.Combine(_diretorioFotos, nomeArquivo);
+                await System.IO.File.WriteAllBytesAsync(caminhoCompleto, imageBytes);
+                return nomeArquivo;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao processar imagem: {ex.Message}");
+                return null;
+            }
         }
 
-        // ============================
-        // GET: api/usuarios/{id}
-        // ============================
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Usuario>> GetUsuario(int id)
-        {
-            var usuario = await _context.Usuarios.FindAsync(id);
-
-            if (usuario == null)
-                return NotFound("Usuário não encontrado.");
-
-            return Ok(usuario);
-        }
-
-        // ============================
-        // POST: api/usuarios
-        // ============================
         [HttpPost]
         public async Task<ActionResult<Usuario>> PostUsuario(UsuarioCreateDto dto)
         {
+            // Validação flexível para Base64 de PNG
+            if (!string.IsNullOrEmpty(dto.Foto) && !dto.Foto.ToLower().Contains("image/png"))
+                return BadRequest("O sistema aceita apenas arquivos PNG.");
+
             if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
-                return BadRequest("Email já cadastrado.");
+                return BadRequest("E-mail já cadastrado.");
 
-            var cpfLimpo = StringUtils.SomenteNumeros(dto.Cpf);
-
-            if (!string.IsNullOrEmpty(cpfLimpo) &&
-                await _context.Usuarios.AnyAsync(u => u.Cpf == cpfLimpo))
+            if (!string.IsNullOrEmpty(dto.Cpf) && await _context.Usuarios.AnyAsync(u => u.Cpf == dto.Cpf))
                 return BadRequest("CPF já cadastrado.");
+
+            string? nomeArquivoSalvo = await ProcessarFoto(dto.Foto);
 
             var usuario = new Usuario
             {
@@ -62,15 +70,13 @@ namespace APIArenaAuto.Controllers
                 Empresa = dto.Empresa,
                 Setor = dto.Setor,
                 Cargo = dto.Cargo,
-
                 DataNascimento = DateUtils.Converter(dto.DataNascimento),
                 DataAdmissao = DateUtils.Converter(dto.DataAdmissao),
-
                 UsuarioLogin = dto.Usuario,
-                Telefone = StringUtils.SomenteNumeros(dto.Telefone),
+                Telefone = dto.Telefone,
                 Email = dto.Email,
-                Foto = dto.Foto,
-                Cpf = cpfLimpo,
+                Foto = nomeArquivoSalvo,
+                Cpf = dto.Cpf,
                 SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha ?? "123456")
             };
 
@@ -80,55 +86,71 @@ namespace APIArenaAuto.Controllers
             return CreatedAtAction(nameof(GetUsuario), new { id = usuario.Id }, usuario);
         }
 
-        // ============================
-        // PUT: api/usuarios/{id}
-        // ============================
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUsuario(int id, [FromBody] UsuarioCreateDto dto)
         {
             var usuario = await _context.Usuarios.FindAsync(id);
-
-            if (usuario == null)
-                return NotFound("Usuário não encontrado.");
+            if (usuario == null) return NotFound("Usuário não encontrado.");
 
             usuario.Nome = dto.Nome;
             usuario.Empresa = dto.Empresa;
             usuario.Setor = dto.Setor;
             usuario.Cargo = dto.Cargo;
-
             usuario.DataNascimento = DateUtils.Converter(dto.DataNascimento);
             usuario.DataAdmissao = DateUtils.Converter(dto.DataAdmissao);
 
+            // CORREÇÃO AQUI: Garantindo que o login seja atualizado na edição
             usuario.UsuarioLogin = dto.Usuario;
-            usuario.Telefone = StringUtils.SomenteNumeros(dto.Telefone);
-            usuario.Email = dto.Email;
-            usuario.Foto = dto.Foto;
-            usuario.Cpf = StringUtils.SomenteNumeros(dto.Cpf);
 
-            if (!string.IsNullOrWhiteSpace(dto.Senha))
+            usuario.Telefone = dto.Telefone;
+            usuario.Email = dto.Email;
+            usuario.Cpf = dto.Cpf;
+
+            if (!string.IsNullOrEmpty(dto.Foto) && dto.Foto.Contains("base64"))
             {
-                usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
+                if (!string.IsNullOrEmpty(usuario.Foto))
+                {
+                    string antigoPath = Path.Combine(_diretorioFotos, usuario.Foto);
+                    if (System.IO.File.Exists(antigoPath)) System.IO.File.Delete(antigoPath);
+                }
+                usuario.Foto = await ProcessarFoto(dto.Foto);
             }
 
-            await _context.SaveChangesAsync();
+            if (!string.IsNullOrWhiteSpace(dto.Senha))
+                usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
 
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
-        // ============================
-        // DELETE: api/usuarios/{id}
-        // ============================
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Usuario>> GetUsuario(int id)
+        {
+            var usuario = await _context.Usuarios.FindAsync(id);
+            if (usuario == null) return NotFound();
+            return Ok(usuario);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsuarios()
+        {
+            return Ok((List<Usuario>?)await _context.Usuarios.ToListAsync());
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUsuario(int id)
         {
             var usuario = await _context.Usuarios.FindAsync(id);
+            if (usuario == null) return NotFound();
 
-            if (usuario == null)
-                return NotFound("Usuário não encontrado.");
+            if (!string.IsNullOrEmpty(usuario.Foto))
+            {
+                string caminhoArquivo = Path.Combine(_diretorioFotos, usuario.Foto);
+                if (System.IO.File.Exists(caminhoArquivo)) System.IO.File.Delete(caminhoArquivo);
+            }
 
             _context.Usuarios.Remove(usuario);
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
     }

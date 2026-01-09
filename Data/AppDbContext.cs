@@ -13,17 +13,23 @@ namespace APIArenaAuto.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Treinamento> Treinamentos { get; set; }
         public DbSet<Comunicado> Comunicados { get; set; }
+        public DbSet<Atendimento> Atendimentos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.Entity<Usuario>()
                 .ToTable("usuarios");
 
             modelBuilder.Entity<Treinamento>()
-                .ToTable("Treinamentos");
+                .ToTable("treinamentos");
 
             modelBuilder.Entity<Comunicado>()
-                .ToTable("Comunicados");
+                .ToTable("comunicados");
+
+            modelBuilder.Entity<Atendimento>()
+                .ToTable("atendimentos");
         }
     }
 }
