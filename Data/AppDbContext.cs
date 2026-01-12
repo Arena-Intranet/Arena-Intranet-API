@@ -14,6 +14,9 @@ namespace APIArenaAuto.Data
         public DbSet<Treinamento> Treinamentos { get; set; }
         public DbSet<Comunicado> Comunicados { get; set; }
         public DbSet<Atendimento> Atendimentos { get; set; }
+        public DbSet<Ouvidoria> Ouvidoria { get; set; }
+        public DbSet<Equipamento> Equipamentos { get; set; }
+        public DbSet<ModeloEquipamento> ModelosEquipamento { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -30,6 +33,22 @@ namespace APIArenaAuto.Data
 
             modelBuilder.Entity<Atendimento>()
                 .ToTable("atendimentos");
+
+            modelBuilder.Entity<Ouvidoria>()
+                .ToTable("ouvidoria");
+
+
+            modelBuilder.Entity<Equipamento>()
+                .ToTable("equipamentos");
+
+            modelBuilder.Entity<ModeloEquipamento>()
+                .ToTable("ModelosEquipamento");
+
+            modelBuilder.Entity<ModeloEquipamento>()
+                .HasOne(m => m.Equipamento)
+                .WithMany(e => e.Modelos)
+                .HasForeignKey(m => m.EquipamentoId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
