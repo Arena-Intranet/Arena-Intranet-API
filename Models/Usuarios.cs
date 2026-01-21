@@ -22,6 +22,9 @@ namespace APIArenaAuto.Models
         [Column("cargo")]
         public string? Cargo { get; set; }
 
+        [Column("superioridade")]
+        public string? superioridade { get; set; }
+
         [Column("data_nascimento")]
         public DateTime? DataNascimento { get; set; }
 
@@ -39,6 +42,9 @@ namespace APIArenaAuto.Models
 
         [Column("foto")]
         public string? Foto { get; set; }
+
+        [Column("nivel_acesso")]
+        public string NivelAcesso { get; set; } = "COLABORADOR";
 
         [Column("senha_hash")]
         public string SenhaHash { get; set; } = string.Empty;

@@ -4,10 +4,6 @@ using APIArenaAuto.Models;
 using APIArenaAuto.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 
 namespace APIArenaAuto.Controllers
@@ -35,9 +31,13 @@ namespace APIArenaAuto.Controllers
 
             try
             {
+                // Identifica a extensão (png, jpg, jpeg)
+                string extensao = ".png"; 
+                if (base64Completo.Contains("image/jpeg") || base64Completo.Contains("image/jpg"))
+                    extensao = ".jpg";
                 string base64Data = base64Completo.Contains(",") ? base64Completo.Split(',')[1] : base64Completo;
                 byte[] imageBytes = Convert.FromBase64String(base64Data.Trim());
-                string nomeArquivo = $"{Guid.NewGuid()}.png";
+                string nomeArquivo = $"{Guid.NewGuid()}{extensao}";
                 string caminhoCompleto = Path.Combine(_diretorioFotos, nomeArquivo);
                 await System.IO.File.WriteAllBytesAsync(caminhoCompleto, imageBytes);
                 return nomeArquivo;
@@ -52,9 +52,16 @@ namespace APIArenaAuto.Controllers
         [HttpPost]
         public async Task<ActionResult<Usuario>> PostUsuario(UsuarioCreateDto dto)
         {
-            // Validação flexível para Base64 de PNG
-            if (!string.IsNullOrEmpty(dto.Foto) && !dto.Foto.ToLower().Contains("image/png"))
-                return BadRequest("O sistema aceita apenas arquivos PNG.");
+            if (!string.IsNullOrEmpty(dto.Foto))
+            {
+                var fotoLower = dto.Foto.ToLower();
+                if (!fotoLower.Contains("image/png") &&
+                    !fotoLower.Contains("image/jpeg") &&
+                    !fotoLower.Contains("image/jpg"))
+                {
+                    return BadRequest("O sistema aceita apenas arquivos PNG, JPG ou JPEG.");
+                }
+            }
 
             if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
                 return BadRequest("E-mail já cadastrado.");
@@ -69,9 +76,11 @@ namespace APIArenaAuto.Controllers
                 Nome = dto.Nome,
                 Empresa = dto.Empresa,
                 Setor = dto.Setor,
+                superioridade = dto.superioridade,
                 Cargo = dto.Cargo,
                 DataNascimento = DateUtils.Converter(dto.DataNascimento),
                 DataAdmissao = DateUtils.Converter(dto.DataAdmissao),
+                NivelAcesso = string.IsNullOrEmpty(dto.NivelAcesso) ? "COLABORADOR" : dto.NivelAcesso.ToUpper(),
                 UsuarioLogin = dto.Usuario,
                 Telefone = dto.Telefone,
                 Email = dto.Email,
@@ -94,17 +103,20 @@ namespace APIArenaAuto.Controllers
 
             usuario.Nome = dto.Nome;
             usuario.Empresa = dto.Empresa;
+            usuario.superioridade = dto.superioridade;
             usuario.Setor = dto.Setor;
             usuario.Cargo = dto.Cargo;
             usuario.DataNascimento = DateUtils.Converter(dto.DataNascimento);
             usuario.DataAdmissao = DateUtils.Converter(dto.DataAdmissao);
-
-            // CORREÇÃO AQUI: Garantindo que o login seja atualizado na edição
             usuario.UsuarioLogin = dto.Usuario;
-
             usuario.Telefone = dto.Telefone;
             usuario.Email = dto.Email;
             usuario.Cpf = dto.Cpf;
+
+            if (!string.IsNullOrEmpty(dto.NivelAcesso))
+            {
+                usuario.NivelAcesso = dto.NivelAcesso.ToUpper(); 
+            }
 
             if (!string.IsNullOrEmpty(dto.Foto) && dto.Foto.Contains("base64"))
             {

@@ -19,14 +19,28 @@ namespace APIArenaAuto.Controllers
 
         // ============================
         // GET: api/atendimento
-        // Pendentes primeiro
         // ============================
         [HttpGet]
         public async Task<IActionResult> Get()
         {
             var lista = await _context.Atendimentos
+                .Include(a => a.Usuario)
                 .OrderByDescending(a => a.Status == "Pendente")
                 .ThenByDescending(a => a.DataAbertura)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.Numero,
+                    a.Titulo,
+                    a.Setor,
+                    a.Empresa,
+                    a.Mensagem,
+                    a.Status,
+                    a.DataAbertura,
+                    a.DataTermino,
+                    a.UsuarioId,
+                    NomeUsuario = a.Usuario.Nome
+                })
                 .ToListAsync();
 
             return Ok(lista);
@@ -38,52 +52,86 @@ namespace APIArenaAuto.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] AtendimentoCreateDto dto)
         {
-            if (dto == null)
-                return BadRequest("Dados inválidos");
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // 🔍 valida se o usuário existe
+            var usuario = await _context.Usuarios.FindAsync(dto.UsuarioId);
+            if (usuario == null)
+                return BadRequest("Usuário inválido.");
 
             var atendimento = new Atendimento
             {
                 Numero = dto.Numero,
-                Nome = dto.Nome,
+                UsuarioId = dto.UsuarioId,
                 Titulo = dto.Titulo,
                 Setor = dto.Setor,
                 Mensagem = dto.Mensagem,
-                Empresa =dto.Empresa,
+                Empresa = dto.Empresa,
                 Status = "Pendente",
-                DataAbertura = DateTime.Now
+                DataAbertura = DateTime.Now,
+                DataTermino = null
             };
 
             _context.Atendimentos.Add(atendimento);
             await _context.SaveChangesAsync();
 
-            return Ok(atendimento); 
+            return Ok(atendimento);
         }
+
+        // ============================
+        // PUT: api/atendimento/{id}/status
+        // ============================
+
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] string novoStatus)
         {
-            // Busca o atendimento no banco
-            var atendimento = await _context.Atendimentos.FindAsync(id);
+            var atendimento = await _context.Atendimentos
+                .Include(a => a.Usuario) 
+                .FirstOrDefaultAsync(a => a.Id == id);
 
-            if (atendimento == null)
-                return NotFound("Atendimento não encontrado.");
+            if (atendimento == null) return NotFound("Atendimento não encontrado");
 
-            // Validação básica (opcional): impede status vazios
-            if (string.IsNullOrWhiteSpace(novoStatus))
-                return BadRequest("O status não pode ser vazio.");
+            string statusLimpo = novoStatus.Replace("\"", "").Trim();
 
-            // Atualiza apenas o campo necessário
-            atendimento.Status = novoStatus;
+            if (statusLimpo == "Resolvido")
+            {
+                atendimento.Status = "Resolvido";
+                atendimento.DataTermino = DateTime.Now;
+            }
+            else if (statusLimpo == "Em atendimento")
+            {
+                atendimento.Status = "Em atendimento";
+                atendimento.DataTermino = null;
+            }
+            else
+            {
+                atendimento.Status = "Pendente";
+                atendimento.DataTermino = null;
+            }
 
             try
             {
                 await _context.SaveChangesAsync();
-                return Ok(atendimento);
+                return Ok(new
+                {
+                    atendimento.Id,
+                    atendimento.Numero,
+                    atendimento.UsuarioId,
+                    NomeUsuario = atendimento.Usuario?.Nome ?? string.Empty,
+                    atendimento.Titulo,
+                    atendimento.Setor,
+                    atendimento.Empresa,
+                    atendimento.Mensagem,
+                    atendimento.Status,
+                    atendimento.DataAbertura,
+                    atendimento.DataTermino
+                });
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                return StatusCode(500, "Erro ao atualizar o status no banco de dados.");
+                return StatusCode(500, ex.InnerException?.Message ?? ex.Message);
             }
         }
     }
-
 }

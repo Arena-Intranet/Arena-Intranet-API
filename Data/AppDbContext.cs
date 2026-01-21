@@ -17,6 +17,7 @@ namespace APIArenaAuto.Data
         public DbSet<Ouvidoria> Ouvidoria { get; set; }
         public DbSet<Equipamento> Equipamentos { get; set; }
         public DbSet<ModeloEquipamento> ModelosEquipamento { get; set; }
+        public DbSet<Organograma> Organograma { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -48,6 +49,18 @@ namespace APIArenaAuto.Data
                 .HasOne(m => m.Equipamento)
                 .WithMany(e => e.Modelos)
                 .HasForeignKey(m => m.EquipamentoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Organograma>()
+               .HasOne(o => o.Gestor)
+               .WithMany()
+               .HasForeignKey(o => o.GestorId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Organograma>()
+                .HasOne(o => o.Liderado)
+                .WithMany()
+                .HasForeignKey(o => o.LideradoId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

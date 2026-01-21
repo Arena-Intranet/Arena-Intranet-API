@@ -6,7 +6,13 @@ namespace APIArenaAuto.Models
     {
         public int Id { get; set; }
         public string Numero { get; set; } = string.Empty;
-        public string Nome { get; set; } = string.Empty;
+
+        [Column("usuario_id")]
+        public int UsuarioId { get; set; }
+
+        [Column("nome")]
+        public Usuario Usuario { get; set; }       
+
         public string Titulo { get; set; } = string.Empty;
         public string Setor { get; set; } = string.Empty;
 
@@ -17,5 +23,9 @@ namespace APIArenaAuto.Models
 
         [Column("data_abertura")]
         public DateTime DataAbertura { get; set; }
+
+        [Column("data_termino")]
+        public DateTime? DataTermino { get; set; }
     }
+
 }

@@ -22,21 +22,16 @@ namespace APIArenaAuto.Controllers
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.UsuarioLogin == dto.Usuario);
 
-            if (usuario == null)
+            if (usuario == null || !BCrypt.Net.BCrypt.Verify(dto.Senha, usuario.SenhaHash))
                 return Unauthorized("Usuário ou senha inválidos");
 
-            bool senhaValida = BCrypt.Net.BCrypt.Verify(dto.Senha, usuario.SenhaHash);
-
-            if (!senhaValida)
-                return Unauthorized("Usuário ou senha inválidos");
-
-            return Ok(new
+            return Ok(new LoginResponseDto
             {
-                usuario.Id,
-                usuario.Nome,
-                usuario.UsuarioLogin,
-                usuario.Setor,
-                usuario.Empresa
+                Id = usuario.Id,
+                Nome = usuario.Nome,
+                NivelAcesso = usuario.NivelAcesso, 
+                Setor = usuario.Setor ?? "",
+                Empresa = usuario.Empresa ?? ""
             });
         }
 

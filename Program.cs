@@ -55,7 +55,6 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// Arquivos estáticos para fotos
 var caminhoFotos = @"C:\Users\Administrator\Downloads\FotosUsuarios";
 if (!Directory.Exists(caminhoFotos)) Directory.CreateDirectory(caminhoFotos);
 

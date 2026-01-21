@@ -73,7 +73,7 @@ namespace APIArenaAuto.Controllers
             _context.Comunicados.Remove(comunicado);
             await _context.SaveChangesAsync();
 
-            return NoContent(); // 204
+            return NoContent(); 
         }
     }
 }
