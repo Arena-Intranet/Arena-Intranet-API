@@ -24,10 +24,10 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ============================
-// BANCO DE DADOS (FAKE - IN MEMORY)
+// BANCO DE DADOS (POSTGRESQL)
 // ============================
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase("ArenaFakeDb")
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
 // ============================
@@ -49,10 +49,18 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ============================
+// CRIA TABELAS AUTOMATICAMENTE (SE AINDA NÃO EXISTIREM)
+// ============================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated(); // ⬅️ cria todas as tabelas
+}
+
+// ============================
 // PASTA DE FOTOS (RENDER)
 // ============================
 var caminhoFotos = Path.Combine(Directory.GetCurrentDirectory(), "FotosUsuarios");
-
 if (!Directory.Exists(caminhoFotos))
 {
     Directory.CreateDirectory(caminhoFotos);
@@ -65,7 +73,7 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 // ============================
-// SWAGGER (EM PRODUÇÃO)
+// SWAGGER
 // ============================
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -78,10 +86,7 @@ app.UseSwaggerUI(c =>
 // PIPELINE
 // ============================
 app.UseCors("Livre");
-
-// ❌ NÃO usar HTTPS no Render
-// app.UseHttpsRedirection();
-
+// app.UseHttpsRedirection(); // ❌ NÃO usar HTTPS no Render
 app.UseAuthorization();
 app.MapControllers();
 
