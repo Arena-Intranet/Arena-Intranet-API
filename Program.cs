@@ -1,5 +1,6 @@
 ﻿using APIArenaAuto.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,10 +43,29 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ============================
+// BUILD
+// ============================
 var app = builder.Build();
 
 // ============================
-// SWAGGER (EM PRODUÇÃO TAMBÉM)
+// PASTA DE FOTOS (RENDER)
+// ============================
+var caminhoFotos = Path.Combine(Directory.GetCurrentDirectory(), "FotosUsuarios");
+
+if (!Directory.Exists(caminhoFotos))
+{
+    Directory.CreateDirectory(caminhoFotos);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(caminhoFotos),
+    RequestPath = "/fotos"
+});
+
+// ============================
+// SWAGGER (EM PRODUÇÃO)
 // ============================
 app.UseSwagger();
 app.UseSwaggerUI(c =>

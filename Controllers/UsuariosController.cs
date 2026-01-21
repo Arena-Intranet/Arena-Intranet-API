@@ -13,16 +13,20 @@ namespace APIArenaAuto.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly string _diretorioFotos = @"C:\Users\Administrator\Downloads\FotosUsuarios";
+        private readonly string _diretorioFotos;
 
         public UsuariosController(AppDbContext context)
         {
             _context = context;
+
+            _diretorioFotos = Path.Combine(Directory.GetCurrentDirectory(), "FotosUsuarios");
+
             if (!Directory.Exists(_diretorioFotos))
             {
                 Directory.CreateDirectory(_diretorioFotos);
             }
         }
+
 
         private async Task<string?> ProcessarFoto(string? base64Completo)
         {
