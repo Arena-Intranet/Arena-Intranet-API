@@ -1,6 +1,5 @@
-using APIArenaAuto.Data;
+Ôªøusing APIArenaAuto.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,19 +10,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // ============================
-// SWAGGER (ConfiguraÁ„o de ServiÁo)
+// SWAGGER
 // ============================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "APIArenaAuto", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "APIArenaAuto",
+        Version = "v1"
+    });
 });
 
 // ============================
-// BANCO DE DADOS
+// BANCO DE DADOS (FAKE - IN MEMORY)
 // ============================
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseInMemoryDatabase("ArenaFakeDb")
 );
 
 // ============================
@@ -42,31 +45,28 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ============================
-// SWAGGER (ConfiguraÁ„o de Pipeline)
+// SWAGGER (EM PRODU√á√ÉO TAMB√âM)
 // ============================
-// Importante: Habilitar o Swagger antes de outros middlewares em desenvolvimento
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "APIArenaAuto v1");
-        c.RoutePrefix = "swagger"; // AcessÌvel em: http://localhost:PORTA/swagger
-    });
-}
-
-var caminhoFotos = @"C:\Users\Administrator\Downloads\FotosUsuarios";
-if (!Directory.Exists(caminhoFotos)) Directory.CreateDirectory(caminhoFotos);
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(caminhoFotos),
-    RequestPath = "/fotos"
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "APIArenaAuto v1");
+    c.RoutePrefix = "swagger";
 });
 
+// ============================
+// PIPELINE
+// ============================
 app.UseCors("Livre");
-app.UseHttpsRedirection();
-app.UseAuthorization(); 
+
+// ‚ùå N√ÉO usar HTTPS no Render
+// app.UseHttpsRedirection();
+
+app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+// ============================
+// PORTA DIN√ÇMICA (RENDER)
+// ============================
+var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+app.Run($"http://0.0.0.0:{port}");
