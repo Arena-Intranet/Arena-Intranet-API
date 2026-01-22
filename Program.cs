@@ -26,6 +26,7 @@ builder.Services.AddSwaggerGen(c =>
 // ============================
 // BANCO DE DADOS (POSTGRESQL)
 // ============================
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
@@ -53,8 +54,23 @@ var app = builder.Build();
 // ============================
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated(); // ⬅️ cria todas as tabelas
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Console.WriteLine("Tentando conectar ao PostgreSQL...");
+        db.Database.EnsureCreated();
+        Console.WriteLine("Conexão e tabelas verificadas com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("=========================================");
+        Console.WriteLine("ERRO AO CONECTAR NO BANCO:");
+        Console.WriteLine(ex.Message);
+        if (ex.InnerException != null)
+            Console.WriteLine("DETALHE: " + ex.InnerException.Message);
+        Console.WriteLine("=========================================");
+        // O app não vai mais fechar sozinho aqui, permitindo ver o erro.
+    }
 }
 
 // ============================

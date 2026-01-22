@@ -23,34 +23,24 @@ namespace APIArenaAuto.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Usuario>()
-                .ToTable("usuarios");
+            // Mapeamento das Tabelas (Exatamente como no Banco SQL)
+            modelBuilder.Entity<Usuario>().ToTable("Usuarios");
+            modelBuilder.Entity<Treinamento>().ToTable("Treinamentos");
+            modelBuilder.Entity<Comunicado>().ToTable("Comunicados");
+            modelBuilder.Entity<Atendimento>().ToTable("Atendimentos");
+            modelBuilder.Entity<Ouvidoria>().ToTable("Ouvidoria");
+            modelBuilder.Entity<Equipamento>().ToTable("Equipamentos");
+            modelBuilder.Entity<ModeloEquipamento>().ToTable("ModelosEquipamento");
+            modelBuilder.Entity<Organograma>().ToTable("Organograma");
 
-            modelBuilder.Entity<Treinamento>()
-                .ToTable("treinamentos");
-
-            modelBuilder.Entity<Comunicado>()
-                .ToTable("comunicados");
-
-            modelBuilder.Entity<Atendimento>()
-                .ToTable("atendimentos");
-
-            modelBuilder.Entity<Ouvidoria>()
-                .ToTable("ouvidoria");
-
-
-            modelBuilder.Entity<Equipamento>()
-                .ToTable("equipamentos");
-
-            modelBuilder.Entity<ModeloEquipamento>()
-                .ToTable("ModelosEquipamento");
-
+            // Relacionamento Equipamento -> Modelos
             modelBuilder.Entity<ModeloEquipamento>()
                 .HasOne(m => m.Equipamento)
                 .WithMany(e => e.Modelos)
-                .HasForeignKey(m => m.EquipamentoId)
+                .HasForeignKey(m => m.EquipamentoId) // Verifique se na sua Model está EquipamentoId ou id_equipamento
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Relacionamentos do Organograma
             modelBuilder.Entity<Organograma>()
                .HasOne(o => o.Gestor)
                .WithMany()
