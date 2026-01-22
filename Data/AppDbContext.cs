@@ -23,7 +23,7 @@ namespace APIArenaAuto.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Mapeamento das Tabelas (Exatamente como no Banco SQL)
+            // Mapeamento das Tabelas (Nomes confirmados no DBeaver)
             modelBuilder.Entity<Usuario>().ToTable("Usuarios");
             modelBuilder.Entity<Treinamento>().ToTable("Treinamentos");
             modelBuilder.Entity<Comunicado>().ToTable("Comunicados");
@@ -33,25 +33,32 @@ namespace APIArenaAuto.Data
             modelBuilder.Entity<ModeloEquipamento>().ToTable("ModelosEquipamento");
             modelBuilder.Entity<Organograma>().ToTable("Organograma");
 
-            // Relacionamento Equipamento -> Modelos
             modelBuilder.Entity<ModeloEquipamento>()
-                .HasOne(m => m.Equipamento)
-                .WithMany(e => e.Modelos)
-                .HasForeignKey(m => m.EquipamentoId) // Verifique se na sua Model está EquipamentoId ou id_equipamento
-                .OnDelete(DeleteBehavior.Cascade);
+              .HasOne(m => m.Equipamento)
+              .WithMany(e => e.Modelos)
+              .HasForeignKey(m => m.EquipamentoId);
 
-            // Relacionamentos do Organograma
+            modelBuilder.Entity<ModeloEquipamento>()
+                .Property(m => m.EquipamentoId)
+                .HasColumnName("id_equipamento");
+
             modelBuilder.Entity<Organograma>()
-               .HasOne(o => o.Gestor)
-               .WithMany()
-               .HasForeignKey(o => o.GestorId)
-               .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(o => o.Gestor)
+                .WithMany()
+                .HasForeignKey(o => o.GestorId);
+
+            modelBuilder.Entity<Organograma>()
+                .Property(o => o.GestorId)
+                .HasColumnName("gestor_id"); 
 
             modelBuilder.Entity<Organograma>()
                 .HasOne(o => o.Liderado)
                 .WithMany()
-                .HasForeignKey(o => o.LideradoId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey(o => o.LideradoId);
+
+            modelBuilder.Entity<Organograma>()
+                .Property(o => o.LideradoId)
+                .HasColumnName("liderado_id");
         }
     }
 }

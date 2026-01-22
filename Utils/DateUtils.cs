@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 
 namespace APIArenaAuto.Utils
 {
@@ -25,7 +26,7 @@ namespace APIArenaAuto.Utils
                 DateTimeStyles.None,
                 out var dataConvertida))
             {
-                return dataConvertida;
+                return DateTime.SpecifyKind(dataConvertida, DateTimeKind.Utc);
             }
 
             throw new Exception("Data inválida. Use dd/MM/yyyy ou yyyy-MM-dd");
