@@ -49,29 +49,6 @@ builder.Services.AddCors(options =>
 // ============================
 var app = builder.Build();
 
-// ============================
-// CRIA TABELAS AUTOMATICAMENTE (SE AINDA NÃO EXISTIREM)
-// ============================
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        Console.WriteLine("Tentando conectar ao PostgreSQL...");
-        db.Database.EnsureCreated();
-        Console.WriteLine("Conexão e tabelas verificadas com sucesso!");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine("=========================================");
-        Console.WriteLine("ERRO AO CONECTAR NO BANCO:");
-        Console.WriteLine(ex.Message);
-        if (ex.InnerException != null)
-            Console.WriteLine("DETALHE: " + ex.InnerException.Message);
-        Console.WriteLine("=========================================");
-        // O app não vai mais fechar sozinho aqui, permitindo ver o erro.
-    }
-}
 
 // ============================
 // PASTA DE FOTOS (RENDER)

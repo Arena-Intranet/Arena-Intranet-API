@@ -38,7 +38,7 @@ namespace APIArenaAuto.Controllers
 
             var novaOuvidoria = new Ouvidoria
             {
-                DataEnvio = DateTime.Now, 
+                DataEnvio = DateTime.UtcNow,
                 Categoria = dto.Categoria,
                 Assunto = dto.Assunto,
                 Mensagem = dto.Mensagem,
